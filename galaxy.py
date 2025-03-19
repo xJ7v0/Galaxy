@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import re
 import socket
 import ssl
@@ -7,16 +8,18 @@ import requests
 import string
 import queue
 import multiprocessing
+import sys
+import json
 
 global result_queue
 result_queue = multiprocessing.Queue()
 
 class SimpleIRCBot:
-    def __init__(self, server, port, channel, botnick, username, password):
+    def __init__(self, server, port, channel, nick, username, password):
         self.server = server
         self.port = port
         self.channel = channel
-        self.botnick = botnick
+        self.nick = nick
         self.username = username
         self.password = password
         self.irc = None
@@ -35,8 +38,8 @@ class SimpleIRCBot:
         self.irc.send(bytes(f"CAP LS\n", "UTF-8"))
 
         # Send user and nick commands
-        self.irc.send(bytes(f"NICK {self.botnick}\n", "UTF-8"))
-        self.irc.send(bytes(f"USER {self.botnick} 0 * :IRC Bot\n", "UTF-8"))
+        self.irc.send(bytes(f"NICK {self.nick}\n", "UTF-8"))
+        self.irc.send(bytes(f"USER {self.username} 0 * :IRC Bot\n", "UTF-8"))
 
         cookie = None
 
@@ -96,12 +99,13 @@ class SimpleIRCBot:
                 print(f"Ping handler error: {e}")
 
     def listen(self):
+        time.sleep(2)
         self.irc.send(bytes(f"JOIN {self.channel}\n", "UTF-8"))
+
 
         # Start a thread to handle PINGs separately
         #ping_thread = threading.Thread(target=self.handle_ping, daemon=True)
         #ping_thread.start()
-
 
         while True:
             try:
@@ -180,28 +184,35 @@ class SimpleIRCBot:
         for chunk in chunks:
             self.irc.send(bytes(f"PRIVMSG {self.channel} :{chunk}\n", "UTF-8"))
             print(f"Sent message: {chunk}")
-            time.sleep(1)
+            time.sleep(2)
 
     def split_message(self, message):
         """Split the message into chunks that fit within the IRC limit."""
         return [message[i:i+400] for i in range(0, len(message), 400)]
 
-
-    def join(self):
-        self.irc.send(bytes(f"JOIN #main\n", "UTF-8"))
-
-
 def main():
-    bot = SimpleIRCBot(
-	server="",
-	port=6667,
-	channel="",
-	botnick="",
-	username="",  # Replace with your username
-	password=""   # Replace with your password
-    )
+    if len(sys.argv) < 2:
+        print("Usage: python galaxy.py <config_file>")
+        sys.exit(1)
+
+    try:
+        with open(sys.argv[1], 'r') as file:
+            config = json.load(file)
+
+    except json.JSONDecodeError as e:
+        print(f"Failed to decode JSON: {e}")
+
+    for key, value in config.items():
+        bot = SimpleIRCBot(
+	    server=value.get("server"),
+	    port=int(value.get("port")),
+	    channel=value.get("channels"),
+	    nick=value.get("nick"),
+	    username=value.get("username"),
+	    password=value.get("password")
+       )
+
     bot.connect()
-    bot.join()
     bot.listen()
 
 if __name__ == "__main__":
