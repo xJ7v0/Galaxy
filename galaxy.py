@@ -147,9 +147,8 @@ class SimpleIRCBot:
 
                     if message.lower().startswith("!help"):
                        self.send_message("!lm (list models), !sm <model> (switch models)")
-
-
-                   # Retrieve Ollama response if available
+                else:
+                    # Retrieve Ollama response if available
                     while not result_queue.empty():
                         reply = result_queue.get()
                         if self.model == "deepseek-r1:latest" or self.model == "deepseek-r1":

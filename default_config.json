@@ -2,7 +2,7 @@
 	"libera": {
 		"server": "irc.libera.chat",
 		"port": "6697",
-		"channels": [ "#libera" ],
+		"channels": "#libera",
 		"nick": "SomeBotName",
 		"username": "SomeBotName",
 		"password": ""
